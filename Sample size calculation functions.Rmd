@@ -1,0 +1,66 @@
+---
+title: "Sample size calculation"
+subtitle: "Frequently used functions"
+author: "Zijun Liu"
+date: '`r Sys.time()`'
+output:
+  html_document:
+    highlight: haddock
+    theme: default
+    code_folding: hide
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+---
+### Hayes and Moulton 7.11 - formula for proportions with ICC
+```{r hayes711}
+hayes7.11 <- function(alpha, beta, pi0, pi1, m, rho) {
+    zab <- (qnorm(1-alpha/2) + qnorm(1-beta))^2
+    num1 <- pi*(1-pi0) + pi1*(1-pi1)
+    num2 <- 1 + (m-1)*rho
+    denom <- m * (pi0-pi1)^2
+    c <- 1 + zab * (num1*num2)/denom
+    c
+}
+
+mde7.11 <- function(cur.power, cur.bonf, proportion0, individuals, icc, c) {
+    uniroot(function(x) hayes7.11(alpha = 0.05/cur.bonf, beta = 1-cur.power, 
+                                  pi0 = proportion0, pi1 = proportion0 + x, 
+                                  m = individuals, rho = icc) - c, c(0.001, 0.999))$root
+}
+```
+
+### Hayes and Moulton 7.12 - formula for means with ICC
+```{r hayes712}
+hayes7.12 <- function(alpha, beta, sigma0, sigma1, m, rho, mu0, mu1) {
+    zab <- (qnorm(1-alpha/2) + qnorm(1-beta))^2
+    num1 <- sigma0^2 + sigma1^2
+    num2 <- 1 +(m-1)*rho
+    denom <- m * (mu0-mu1)^2
+    c <- 1 + zab * (num1*num2)/denom
+    c
+}
+
+mde7.12 <- function(cur.power, cur.bonf, sigma, individuals, icc, mu.placebo, c) {
+    uniroot(function(x) hayes7.12(alpha = 0.05/cur.bonf, beta = 1 - cur.power,
+                                  sigma0 = sigma, sigma1 = sigma, m = individuals, 
+                                  rho = icc, mu0 = mu.placebo, mu1 = mu.placebo + x) - c,
+            c(0.001, 0.999))$root
+}
+
+```
+
+### T-test (power.t.test)
+```{r t test}
+
+# given a sequence of sample size
+n.per.arm <- c(10, 20, 30, 40)
+mde <- vector(length = length(n.per.arm))
+for (i in 1: length(mde.imp.cover.small)) {
+    mde[i] <- power.t.test(n = n.per.arm[i], sd = sd, power = power)$delta
+}
+
+```
