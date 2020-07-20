@@ -1,0 +1,106 @@
+---
+title: "Cluster randomized trial sample size function"
+subtitle: "proportions"
+author: "Zijun Liu and Ben Arnold"
+date: 'updated: `r Sys.time()`'
+output:
+  html_document:
+    highlight: haddock
+    theme: default
+    code_folding: show
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+    toc_float:
+      collapsed: yes
+      smooth_scroll: yes
+---
+
+# preamble
+```{r preamble}
+# load packages 
+# (only required for the example) 
+library(tidyverse)
+
+```
+
+# ss_cluster_prop
+
+Estimate the number of clusters requred per treatment arm, $c$, for a parallel cluster randomized trial with equal allocation. This is equation 7.11 (pg 135) in Hayes and Moulton (2017) Cluster randomised trials. (Chapman and Hall/CRC).
+
+\begin{equation}
+c = 1 + \left( Z_{\alpha/2} + Z_\beta \right)^2 \frac{\left[ \pi_0(1-\pi_0) + \pi_1(1-\pi_1) \right] \times \left[ 1 + (m-1)\rho \right]}{m(\pi_0 - \pi_1)^2}
+\end{equation}
+
+where:
+
+* $c$ : is the number of clusters _per arm_
+* $\alpha$ : is the Type-I error rate (divided by 2 for a two-sided test)
+* $\beta$ : is the Type-II error rate (1-$\beta$ is power)
+* $\pi_0$, $\pi_1$ : are the proportions in the control and intervention groups
+* $m$ : is the average number of individuals per cluster
+* $\rho$ : is the intra-cluster correlation coefficient (ICC) for repeated measures within cluster
+
+```{r ss_cluster_prop}
+#----------------------------
+# ss_cluster_prop
+#
+# calculate the number of clusters required per arm 
+# for defined power (1-beta), two-sided alpha, and
+# assumed prevalence in the two groups. Note, the detectable
+# effect is pi1 - pi0
+#
+# This is equation 7.11 in Hayes & Moulten 2017. Cluster randomised trials.
+#
+# @param alpha : type I error, e.g. 0.05
+# @param beta  : type II error, e.g. 0.2, (1-beta = power)
+# @param pi0   : outcome proportion in the control group
+# @param pi1   : outcome proportion in the intervention group
+# @param m     : average number of measurements per cluster
+# @param rho   : intra-cluster correlation coefficient (ICC) for the outcome
+#
+# returns: 
+# @numeric c : number of clusters per arm (not rounded / not integer)
+ss_cluster_prop <- function(alpha, beta, pi0, pi1, m, rho) {
+    zab <- (qnorm(1-alpha/2) + qnorm(1-beta))^2
+    num1 <- pi*(1-pi0) + pi1*(1-pi1)
+    num2 <- 1 + (m-1)*rho
+    denom <- m * (pi0-pi1)^2
+    c <- 1 + zab * (num1*num2)/denom
+    c
+}
+
+```
+
+# example
+
+For a range of effect sizes, calculate the required number of clusters.
+
+```{r ss_cluster_prop example}
+# assume prevalence in control is 20%
+# vary the proportion in the intervention arm from 18% down to 10%
+# assume clusters include 30 observations, with ICC = 0.05
+# assume a 2-sided type I alpha of 0.05, and 90% power (beta = 0.1)
+pi1s <- seq(0.10,0.18,by=0.01)
+cs <- map_dbl(pi1s, ss_cluster_prop, alpha=0.05, beta=0.2, pi0= 0.2, m=30, rho=0.05)
+
+```
+
+Plot results
+
+```{r ss_cluster_prop example figure}
+d_plot <- data.frame(pi1=pi1s, delta = 0.2-pi1s, c=cs)
+ggplot(data = d_plot, aes(x = delta, y = c)) +
+  geom_point() +
+  geom_line() +
+  geom_text(aes(label = paste0(sprintf("%1.0f",c)) ), nudge_x = 0.002, nudge_y = 200) +
+  labs(x = expression(paste("effect size (", pi[1] - pi[0],")")), y = "clusters per arm (c)") +
+  theme_minimal()
+  
+
+```
+
+# session info
+```{r session info}
+sessionInfo()
+```
