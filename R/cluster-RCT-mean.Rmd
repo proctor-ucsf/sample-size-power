@@ -101,3 +101,8 @@ ggplot(data = d_plot, aes(x = delta, y = c)) +
   theme_minimal()
 ```
   
+
+# session info
+```{r session info}
+sessionInfo()
+```
