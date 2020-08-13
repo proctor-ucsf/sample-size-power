@@ -42,7 +42,7 @@ where:
 * $m$ : is the average number of individuals per cluster
 * $\rho$ : is the intra-cluster correlation coefficient (ICC) for repeated measures within cluster
 
-```{r ss_cluster_prop}
+```{r ss_cluster_mean}
 #----------------------------
 # ss_cluster_mean
 #
@@ -91,7 +91,7 @@ cs <- map_dbl(mu1s, ss_cluster_mean, alpha=0.05, beta=0.1, sigma0 = 0.25, sigma1
 
 Plot results
 
-```{r ss_cluster_prop example figure}
+```{r ss_cluster_mean example figure}
 d_plot <- data.frame(mu1=mu1s, delta = mu1s-1, c=cs)
 ggplot(data = d_plot, aes(x = delta, y = c)) +
   geom_point() +
